@@ -49,14 +49,14 @@ o que o torna testável em unidade + property tests (hypothesis) sem infra.
 |--------|-----------|--------|
 | Estilo & tipos | `ruff` + `mypy --strict` | ✅ em CI |
 | Unit + cobertura | `pytest` (≥ 80%) | ✅ 100% |
+| Integration | `testcontainers` (RabbitMQ efêmero) | ✅ publish→consume→route |
 | Property-based | `hypothesis` nas regras | _planejado_ |
-| Integration | `testcontainers` (RabbitMQ + Postgres) | _planejado_ |
 | Chaos | `toxiproxy` · mutation `mutmut` nightly | _planejado_ |
 
 ## 🗺️ Roadmap
 
 - [x] Modelo de regras + matcher puro, testado (ruff/mypy/cov)
-- [ ] Consumer pika (ack manual + prefetch) + testcontainers
+- [x] Consumer/publisher pika (ack manual + prefetch) + integration testcontainers
 - [ ] Persistência SQLAlchemy 2.0 + Alembic · property tests (hypothesis)
 - [ ] Dispatcher httpx + DLX + retry exponencial · admin FastAPI
 - [ ] Systemd unit · Docker Compose · chaos (toxiproxy) · mutmut nightly
