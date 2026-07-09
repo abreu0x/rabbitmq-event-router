@@ -1,6 +1,5 @@
-# CI — rabbitmq-event-router (quality gate Tier 1).
-# Enxuto por ora: ruff + mypy strict + pytest cov>=80%. Integration (testcontainers),
-# property (hypothesis) e chaos (toxiproxy) entram conforme o repo cresce.
+# CI — rabbitmq-event-router.
+# quality: ruff + mypy strict + unit (cov>=80%). integration: testcontainers (Docker).
 name: CI
 
 on:
@@ -18,7 +17,7 @@ concurrency:
 
 jobs:
   quality:
-    name: ruff + mypy --strict + pytest (cov ≥ 80%)
+    name: ruff + mypy --strict + unit (cov ≥ 80%)
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -35,5 +34,20 @@ jobs:
         run: uv run ruff format --check .
       - name: mypy --strict
         run: uv run mypy
-      - name: pytest + coverage
-        run: uv run pytest
+      - name: pytest unit + coverage
+        run: uv run pytest tests/unit --cov-fail-under=80
+
+  integration:
+    name: Integration (RabbitMQ via testcontainers)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+      - run: uv python install 3.12
+      - run: uv sync --frozen --all-extras
+      - name: pytest integration
+        run: uv run pytest tests/integration --no-cov -v
