@@ -1,0 +1,22 @@
+[Unit]
+Description=rabbitmq-event-router — roteador de eventos RabbitMQ para webhooks
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=router
+WorkingDirectory=/opt/rabbitmq-event-router
+Environment=DATABASE_URL=postgresql+psycopg://router@localhost/router
+ExecStart=/opt/rabbitmq-event-router/.venv/bin/uvicorn rabbitmq_event_router.asgi:app --host 0.0.0.0 --port 8000
+Restart=on-failure
+RestartSec=5
+
+# Hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

@@ -6,10 +6,10 @@
 [![Release](https://img.shields.io/github/v/release/abreu0x/rabbitmq-event-router?include_prereleases&style=flat-square)](https://github.com/abreu0x/rabbitmq-event-router/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
 
-> **Status:** esqueleto em desenvolvimento. A lógica de roteamento (modelo + matcher
-> puro) já está testada com `ruff` + `mypy --strict` + cobertura 100% em CI. Consumo
-> pika, persistência SQLAlchemy/Alembic, dispatch httpx e admin FastAPI chegam nas
-> próximas etapas.
+> **Status `v0.1.0`:** funcional ponta a ponta — consumo pika (ack + prefetch + DLX),
+> matcher de regras (DB via SQLAlchemy/Alembic), dispatch httpx com retry/backoff, admin
+> FastAPI e Docker Compose. Coberto por unit + property (hypothesis) + integration
+> (testcontainers), tudo em CI. Contract (schemathesis), chaos e mutation são o próximo passo.
 
 ## 🚀 Demo em 30s
 
@@ -50,9 +50,10 @@ o que o torna testável em unidade + property tests (hypothesis) sem infra.
 | Estilo & tipos | `ruff` + `mypy --strict` | ✅ em CI |
 | Unit + cobertura | `pytest` (≥ 80%) | ✅ 98% |
 | Admin API | FastAPI + `TestClient` (CRUD, input `strict`) | ✅ |
+| Dispatcher | httpx + retry/backoff, testado com `respx` | ✅ sem rede |
 | Persistência | SQLAlchemy 2.0 + Alembic (SQLite in-mem) | ✅ load + migração testadas |
 | Property-based | `hypothesis` no matcher | ✅ 3 invariantes |
-| Integration | `testcontainers` (RabbitMQ efêmero) | ✅ publish→consume→route |
+| Integration | `testcontainers` (RabbitMQ efêmero) | ✅ route + **DLX poison→DLQ** |
 | Contract | `schemathesis` no OpenAPI | _planejado (já rendeu 404-docs + strict)_ |
 | Chaos | `toxiproxy` · mutation `mutmut` nightly | _planejado_ |
 
@@ -62,8 +63,8 @@ o que o torna testável em unidade + property tests (hypothesis) sem infra.
 - [x] Consumer/publisher pika (ack manual + prefetch) + integration testcontainers
 - [x] Persistência SQLAlchemy 2.0 + Alembic (migração testada) · property tests (hypothesis)
 - [x] Admin FastAPI (CRUD, input `strict`) + structlog + Docker Compose (broker+DB+service)
-- [ ] Dispatcher httpx + DLX + retry exponencial
-- [ ] Systemd unit · schemathesis (contract) · chaos (toxiproxy) · mutmut nightly
+- [x] Dispatcher httpx (retry + backoff exponencial) + DLX (poison → DLQ) + Systemd unit · **tag `v0.1.0`**
+- [ ] schemathesis (contract) · chaos (toxiproxy) · mutmut nightly
 
 ## 🛠️ Stack
 
