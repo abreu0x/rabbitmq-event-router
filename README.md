@@ -48,10 +48,12 @@ o que o torna testável em unidade + property tests (hypothesis) sem infra.
 | Camada | Ferramenta | Status |
 |--------|-----------|--------|
 | Estilo & tipos | `ruff` + `mypy --strict` | ✅ em CI |
-| Unit + cobertura | `pytest` (≥ 80%) | ✅ 100% |
+| Unit + cobertura | `pytest` (≥ 80%) | ✅ 98% |
+| Admin API | FastAPI + `TestClient` (CRUD, input `strict`) | ✅ |
 | Persistência | SQLAlchemy 2.0 + Alembic (SQLite in-mem) | ✅ load + migração testadas |
 | Property-based | `hypothesis` no matcher | ✅ 3 invariantes |
 | Integration | `testcontainers` (RabbitMQ efêmero) | ✅ publish→consume→route |
+| Contract | `schemathesis` no OpenAPI | _planejado (já rendeu 404-docs + strict)_ |
 | Chaos | `toxiproxy` · mutation `mutmut` nightly | _planejado_ |
 
 ## 🗺️ Roadmap
@@ -59,8 +61,9 @@ o que o torna testável em unidade + property tests (hypothesis) sem infra.
 - [x] Modelo de regras + matcher puro, testado (ruff/mypy/cov)
 - [x] Consumer/publisher pika (ack manual + prefetch) + integration testcontainers
 - [x] Persistência SQLAlchemy 2.0 + Alembic (migração testada) · property tests (hypothesis)
-- [ ] Dispatcher httpx + DLX + retry exponencial · admin FastAPI
-- [ ] Systemd unit · Docker Compose · chaos (toxiproxy) · mutmut nightly
+- [x] Admin FastAPI (CRUD, input `strict`) + structlog + Docker Compose (broker+DB+service)
+- [ ] Dispatcher httpx + DLX + retry exponencial
+- [ ] Systemd unit · schemathesis (contract) · chaos (toxiproxy) · mutmut nightly
 
 ## 🛠️ Stack
 
