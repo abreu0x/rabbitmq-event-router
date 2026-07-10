@@ -5,8 +5,14 @@ from __future__ import annotations
 import httpx
 import pytest
 import respx
+from structlog.testing import capture_logs
 
-from rabbitmq_event_router.dispatcher import backoff_delays, dispatch
+from rabbitmq_event_router.dispatcher import (
+    DispatchFailedError,
+    backoff_delays,
+    dispatch,
+    make_on_route,
+)
 from rabbitmq_event_router.rules import Event
 
 EVENT = Event(event_type="motion")
@@ -26,6 +32,14 @@ def test_backoff_delays_capped() -> None:
 
 def test_backoff_delays_zero() -> None:
     assert backoff_delays(0) == []
+
+
+def test_backoff_delays_jitter_within_bounds() -> None:
+    plain = backoff_delays(5, base=1.0, factor=2.0, max_delay=100.0)
+    jittered = backoff_delays(5, base=1.0, factor=2.0, max_delay=100.0, jitter=0.2)
+    assert len(jittered) == len(plain)
+    for d, j in zip(plain, jittered, strict=True):
+        assert d * 0.8 <= j <= d * 1.2
 
 
 def test_backoff_delays_negative_rejected() -> None:
@@ -65,3 +79,31 @@ def test_dispatch_handles_transport_error() -> None:
         ok = dispatch(EVENT, "https://hook", client=client, retries=1, sleep=_no_sleep)
     assert ok is False
     assert route.call_count == 2
+
+
+@respx.mock
+def test_dispatch_logs_each_failure_and_giving_up() -> None:
+    respx.post("https://hook").mock(return_value=httpx.Response(500))
+    with capture_logs() as logs, httpx.Client() as client:
+        dispatch(EVENT, "https://hook", client=client, retries=1, jitter=0.0, sleep=_no_sleep)
+    events = [e["event"] for e in logs]
+    assert "webhook_non_2xx" in events
+    assert "webhook_giving_up" in events
+
+
+@respx.mock
+def test_make_on_route_raises_on_exhausted_retries() -> None:
+    # A ponte transforma o retorno False do dispatch em exceção → consumer manda à DLQ.
+    respx.post("https://hook").mock(return_value=httpx.Response(500))
+    with httpx.Client() as client:
+        on_route = make_on_route(client, retries=0, jitter=0.0, sleep=_no_sleep)
+        with pytest.raises(DispatchFailedError, match="falhou"):
+            on_route("https://hook", EVENT)
+
+
+@respx.mock
+def test_make_on_route_silent_on_success() -> None:
+    respx.post("https://hook").mock(return_value=httpx.Response(200))
+    with httpx.Client() as client:
+        on_route = make_on_route(client, jitter=0.0, sleep=_no_sleep)
+        assert on_route("https://hook", EVENT) is None

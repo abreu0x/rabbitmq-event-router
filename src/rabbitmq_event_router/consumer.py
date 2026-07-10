@@ -14,7 +14,10 @@ from collections.abc import Callable, Sequence
 import pika
 from pika.adapters.blocking_connection import BlockingChannel
 
+from rabbitmq_event_router.logging_config import get_logger
 from rabbitmq_event_router.rules import Event, RoutingRule, match_rules
+
+logger = get_logger(__name__)
 
 
 def parse_message(body: bytes) -> Event:
@@ -80,15 +83,20 @@ def consume(
         channel = conn.channel()
         declare_topology(channel, queue)
         channel.basic_qos(prefetch_count=prefetch)
+        rules_list = list(rules)
         processed = 0
         for method, _props, body in channel.consume(queue, inactivity_timeout=inactivity_timeout):
             if method is None:  # inactivity timeout: nada mais na fila
                 break
             try:
                 event = parse_message(body)
-                for rule in match_rules(event, list(rules)):
+                for rule in match_rules(event, rules_list):
                     on_route(rule.webhook_url, event)
-            except Exception:
+            except Exception as exc:
+                # Erro nunca em silêncio: registra a causa antes de mandar à DLQ.
+                logger.warning(
+                    "message_dead_lettered", delivery_tag=method.delivery_tag, error=str(exc)
+                )
                 channel.basic_nack(method.delivery_tag, requeue=False)
             else:
                 channel.basic_ack(method.delivery_tag)

@@ -1,15 +1,22 @@
 """rabbitmq-event-router — roteia eventos RabbitMQ para webhooks por regras."""
 
 from rabbitmq_event_router.consumer import consume, parse_message, publish, route_message
-from rabbitmq_event_router.dispatcher import backoff_delays, dispatch
+from rabbitmq_event_router.dispatcher import (
+    DispatchFailedError,
+    backoff_delays,
+    dispatch,
+    make_on_route,
+)
 from rabbitmq_event_router.rules import Event, RoutingRule, match_rules
 
 __all__ = [
+    "DispatchFailedError",
     "Event",
     "RoutingRule",
     "backoff_delays",
     "consume",
     "dispatch",
+    "make_on_route",
     "match_rules",
     "parse_message",
     "publish",
