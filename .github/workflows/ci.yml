@@ -34,6 +34,8 @@ jobs:
         run: uv run ruff format --check .
       - name: mypy --strict
         run: uv run mypy
+      - name: bandit (SAST)
+        run: uv run bandit -q -r src
       - name: pytest unit + coverage
         run: uv run pytest tests/unit --cov-fail-under=80
 
